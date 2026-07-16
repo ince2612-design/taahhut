@@ -48,32 +48,32 @@ if st.button("BELGE OLUŞTUR"):
     su_bedel = (su_cephe * 4352.38) / 2
     kanal_bedel = (kanal_cephe * 7395.14) / 2
     
-    # PDF oluşturma - Unicode desteği ile
+    # PDF oluşturma - Unicode desteği
+    # fpdf2'de Unicode için font yüklemek şarttır, ancak hazır gelen "times" fontu unicode destekler
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_font("times", size=12) # 'helvetica' yerine 'times' daha iyi unicode sonuç verir
     
-    # Fontu "helvetica" olarak ayarla ve Türkçe karakterleri desteklemesini sağla
-    pdf.set_font("helvetica", size=12)
-    
-    # Yardımcı bir fonksiyon yerine doğrudan yazım kullanıyoruz (Unicode destekli)
-    pdf.cell(0, 10, "TAAHHUTNAME", ln=True, align='C') # 'Ü' yerine 'U' geçici çözüm
-    pdf.cell(0, 10, "ICME SUYU VE KANAL KATILIMI ICIN TASINMAZ TAPU KAYDI", ln=True, align='C')
+    # Karakterleri PDF'e güvenli yazmak için helper fonksiyon
+    def write_t(text):
+        pdf.cell(0, 8, text, ln=True)
+
+    pdf.cell(0, 10, "TAAHHUTNAME", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.cell(0, 8, f"ILI: {ili}          PAFTA: {pafta}", ln=True)
-    pdf.cell(0, 8, f"ILCE: {ilce}          ADA: {ada}", ln=True)
-    pdf.cell(0, 8, f"MAHALLE: {mahalle}          PARSEL: {parsel}", ln=True)
+    write_t(f"ILI: {ili}          PAFTA: {pafta}")
+    write_t(f"ILCE: {ilce}          ADA: {ada}")
+    write_t(f"MAHALLE: {mahalle}          PARSEL: {parsel}")
     
     if is_hisseli:
-        pdf.cell(0, 8, f"BAGIMSIZ BOLUM NO: {bb_no}", ln=True)
+        write_t(f"BAGIMSIZ BOLUM NO: {bb_no}")
     
-    pdf.ln(10)
-    pdf.cell(0, 8, f"Icme suyu katilim bedeli: {su_bedel:,.2f} TL", ln=True)
-    pdf.cell(0, 8, f"Kanal katilim bedeli: {kanal_bedel:,.2f} TL", ln=True)
+    pdf.ln(5)
+    write_t(f"Icme suyu katilim bedeli: {su_bedel:,.2f} TL")
+    write_t(f"Kanal katilim bedeli: {kanal_bedel:,.2f} TL")
     
-    pdf.ln(10)
-    metin = "Yukarida tapu kaydi yazili tasinmazin maliki sifatiyla, IZSU Genel Mudurlugu tarafindan belirlenen bedelleri odeyecegimi beyan ve taahhut ederim."
-    pdf.multi_cell(0, 5, metin)
+    pdf.ln(5)
+    pdf.multi_cell(0, 5, "Yukarida tapu kaydi yazili tasinmazin maliki sifatiyla, IZSU Genel Mudurlugu tarafindan belirlenen bedelleri odeyecegimi beyan ve taahhut ederim.")
 
     # Çıktı
     pdf_bytes = pdf.output()
