@@ -2,41 +2,77 @@ import streamlit as st
 from fpdf import FPDF
 import base64
 
+# Türkçe karakter desteği için yardımcı fonksiyon
+def t(text):
+    return text.encode('latin-1', 'replace').decode('latin-1')
+
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
+
+st.markdown("""
+    <style>
+    .stApp { background-color: #e3f2fd; } 
+    h1 { color: #003366; text-align: center; }
+    .big-font { font-size:20px !important; font-weight: bold; color: #003366; }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("NOTER TAAHHÜTNAMESİ")
 
-# Form alanlarını buraya eklediğiniz şekilde bırakın...
-# (Kısalık adına burayı geçiyorum, kendi kodunuzdaki form kısmını koruyun)
-# ...
+# Form Alanları
+col1, col2 = st.columns(2)
+with col1:
+    ili = st.text_input("İLİ", "İZMİR")
+    ilce = st.text_input("İLÇE")
+    mahalle = st.text_input("MAHALLE")
+with col2:
+    pafta = st.text_input("PAFTA")
+    ada = st.text_input("ADA")
+    parsel = st.text_input("PARSEL")
+
+st.markdown('<p class="big-font">Hisseli mi?</p>', unsafe_allow_html=True)
+is_hisseli = st.checkbox("Evet, hisseli")
+
+if is_hisseli:
+    toplam_bb = st.number_input("Toplam Bağımsız Bölüm Sayısı", min_value=1)
+    bb_no = st.text_input("Bağımsız Bölüm No")
+    col_a, col_b = st.columns(2)
+    toplam_su = col_a.number_input("Toplam Su Cephe", min_value=0.0)
+    toplam_kanal = col_b.number_input("Toplam Kanal Cephe", min_value=0.0)
+    su_cephe = toplam_su / toplam_bb if toplam_bb > 0 else 0
+    kanal_cephe = toplam_kanal / toplam_bb if toplam_bb > 0 else 0
+else:
+    col_a, col_b = st.columns(2)
+    su_cephe = col_a.number_input("Su Cephe", min_value=0.0)
+    kanal_cephe = col_b.number_input("Kanal Cephe", min_value=0.0)
+    bb_no = ""
 
 if st.button("BELGE OLUŞTUR"):
-    # HESAPLAMALAR...
-    su_bedel = (4352.38) / 2 # Örnek
-    kanal_bedel = (7395.14) / 2 # Örnek
+    su_bedel = (su_cephe * 4352.38) / 2
+    kanal_bedel = (kanal_cephe * 7395.14) / 2
     
-    # FPDF'i bu şekilde tanımlayın (Font yüklemeden)
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_font("helvetica", size=12)
     
-    # Türkçe karakter hatasını önlemek için set_font'ta 'latin-1' zorlaması
-    # 'helvetica' standarttır ve ek dosya gerektirmez.
-    pdf.set_font("helvetica", size=14)
-    
-    # Metinleri doğrudan yazarken encode/decode kullanarak hatayı engelliyoruz
-    def t(text):
-        return text.encode('latin-1', 'replace').decode('latin-1')
-
-    pdf.cell(0, 8, t("TAAHHÜTNAME"), ln=True, align='C')
-    pdf.cell(0, 8, t("İÇME SUYU VE KANAL KATILIMI İÇİN"), ln=True, align='C')
-    pdf.cell(0, 8, t("TAŞINMAZ TAPU KAYDI"), ln=True, align='C')
+    pdf.cell(0, 10, t("TAAHHÜTNAME"), ln=True, align='C')
+    pdf.cell(0, 10, t("İÇME SUYU VE KANAL KATILIMI İÇİN TAŞINMAZ TAPU KAYDI"), ln=True, align='C')
     pdf.ln(10)
     
-    # Bilgiler...
-    pdf.set_font("helvetica", size=11)
-    pdf.text(20, 90, t("İLİ: İZMİR"))
+    pdf.cell(0, 8, t(f"İLİ: {ili}          PAFTA: {pafta}"), ln=True)
+    pdf.cell(0, 8, t(f"İLÇE: {ilce}          ADA: {ada}"), ln=True)
+    pdf.cell(0, 8, t(f"MAHALLE: {mahalle}          PARSEL: {parsel}"), ln=True)
+    if is_hisseli:
+        pdf.cell(0, 8, t(f"BAĞIMSIZ BÖLÜM NO: {bb_no}"), ln=True)
     
-    # ... (Diğer tüm text satırlarını t() fonksiyonu içine alın)
+    pdf.ln(10)
+    pdf.cell(0, 8, t(f"İçme suyu katılım bedeli: {su_bedel:,.2f} TL"), ln=True)
+    pdf.cell(0, 8, t(f"Kanal katılım bedeli: {kanal_bedel:,.2f} TL"), ln=True)
     
+    pdf.ln(10)
+    metin = t("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla, İZSU Genel Müdürlüğü tarafından belirlenen bedelleri ödeyeceğimi beyan ve taahhüt ederim.")
+    pdf.multi_cell(0, 5, metin)
+
     pdf_bytes = pdf.output()
-    # ... (Geri kalan aynı)
+    b64 = base64.b64encode(pdf_bytes).decode()
+    st.markdown(f'<iframe src="data:application/pdf;base64,{b64}" width="100%" height="600px"></iframe>', unsafe_allow_html=True)
+    st.download_button("📥 PDF İNDİR", pdf_bytes, "Taahhutname.pdf", "application/pdf")
