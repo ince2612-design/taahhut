@@ -52,6 +52,15 @@ if st.button("BELGE OLUŞTUR"):
     
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    
+    # fpdf2'nin kendi içindeki gömülü fontu, unicode desteği ile kullanıyoruz
+    pdf.set_font("helvetica", size=14) 
+    
+    # Eğer bu hata verirse, lütfen "TAAHHÜTNAME" gibi özel karakter içeren 
+    # kelimeleri şu şekilde yazmayı deneyin:
+    # "TAAHHÜTNAME".encode('latin-1', 'replace').decode('latin-1')
     
     # Font değişikliği yapıldı: DejaVuSans.ttf yerine "helvetica" kullanılıyor
     pdf.set_font("helvetica", size=14)
