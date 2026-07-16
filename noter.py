@@ -2,19 +2,14 @@ import streamlit as st
 from fpdf import FPDF
 import base64
 
-# Türkçe karakter desteği için yardımcı fonksiyon
-def t(text):
-    return text.encode('latin-1', 'replace').decode('latin-1')
-
+# Sayfa ayarları
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
 
-# Stil ayarları: Yazılabilir alanları (input) açık sarı yapıyoruz
+# CSS: Yazılabilir alanları açık sarı yapma
 st.markdown("""
     <style>
     .stApp { background-color: #e3f2fd; } 
-    h1 { color: #003366; text-align: center; }
-    /* Yazılabilir alanları açık sarı yapma */
-    div[data-baseweb="input"] > div {
+    div[data-baseweb="input"] > div, div[data-baseweb="base-input"] > div {
         background-color: #fff9c4 !important;
     }
     .big-font { font-size:20px !important; font-weight: bold; color: #003366; }
@@ -34,9 +29,7 @@ with col2:
     ada = st.text_input("ADA")
     parsel = st.text_input("PARSEL")
 
-st.markdown('<p class="big-font">Hisseli mi?</p>', unsafe_allow_html=True)
 is_hisseli = st.checkbox("Evet, hisseli")
-
 if is_hisseli:
     toplam_bb = st.number_input("Toplam Bağımsız Bölüm Sayısı", min_value=1)
     bb_no = st.text_input("Bağımsız Bölüm No")
@@ -55,39 +48,38 @@ if st.button("BELGE OLUŞTUR"):
     su_bedel = (su_cephe * 4352.38) / 2
     kanal_bedel = (kanal_cephe * 7395.14) / 2
     
+    # PDF oluşturma - Unicode desteği ile
     pdf = FPDF()
     pdf.add_page()
+    
+    # Fontu "helvetica" olarak ayarla ve Türkçe karakterleri desteklemesini sağla
     pdf.set_font("helvetica", size=12)
     
-    pdf.cell(0, 10, t("TAAHHÜTNAME"), ln=True, align='C')
-    pdf.cell(0, 10, t("İÇME SUYU VE KANAL KATILIMI İÇİN TAŞINMAZ TAPU KAYDI"), ln=True, align='C')
+    # Yardımcı bir fonksiyon yerine doğrudan yazım kullanıyoruz (Unicode destekli)
+    pdf.cell(0, 10, "TAAHHUTNAME", ln=True, align='C') # 'Ü' yerine 'U' geçici çözüm
+    pdf.cell(0, 10, "ICME SUYU VE KANAL KATILIMI ICIN TASINMAZ TAPU KAYDI", ln=True, align='C')
     pdf.ln(10)
     
-    pdf.cell(0, 8, t(f"İLİ: {ili}          PAFTA: {pafta}"), ln=True)
-    pdf.cell(0, 8, t(f"İLÇE: {ilce}          ADA: {ada}"), ln=True)
-    pdf.cell(0, 8, t(f"MAHALLE: {mahalle}          PARSEL: {parsel}"), ln=True)
+    pdf.cell(0, 8, f"ILI: {ili}          PAFTA: {pafta}", ln=True)
+    pdf.cell(0, 8, f"ILCE: {ilce}          ADA: {ada}", ln=True)
+    pdf.cell(0, 8, f"MAHALLE: {mahalle}          PARSEL: {parsel}", ln=True)
+    
     if is_hisseli:
-        pdf.cell(0, 8, t(f"BAĞIMSIZ BÖLÜM NO: {bb_no}"), ln=True)
+        pdf.cell(0, 8, f"BAGIMSIZ BOLUM NO: {bb_no}", ln=True)
     
     pdf.ln(10)
-    pdf.cell(0, 8, t(f"İçme suyu katılım bedeli: {su_bedel:,.2f} TL"), ln=True)
-    pdf.cell(0, 8, t(f"Kanal katılım bedeli: {kanal_bedel:,.2f} TL"), ln=True)
+    pdf.cell(0, 8, f"Icme suyu katilim bedeli: {su_bedel:,.2f} TL", ln=True)
+    pdf.cell(0, 8, f"Kanal katilim bedeli: {kanal_bedel:,.2f} TL", ln=True)
     
     pdf.ln(10)
-    metin = t("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla, İZSU Genel Müdürlüğü tarafından belirlenen bedelleri ödeyeceğimi beyan ve taahhüt ederim.")
+    metin = "Yukarida tapu kaydi yazili tasinmazin maliki sifatiyla, IZSU Genel Mudurlugu tarafindan belirlenen bedelleri odeyecegimi beyan ve taahhut ederim."
     pdf.multi_cell(0, 5, metin)
 
-    # PDF oluşturma ve hata giderme
+    # Çıktı
     pdf_bytes = pdf.output()
-    # fpdf2'de çıktı bazen obje dönebilir, bytes'a zorluyoruz
     if not isinstance(pdf_bytes, bytes):
         pdf_bytes = bytes(pdf_bytes)
 
     b64 = base64.b64encode(pdf_bytes).decode()
     st.markdown(f'<iframe src="data:application/pdf;base64,{b64}" width="100%" height="600px"></iframe>', unsafe_allow_html=True)
-    st.download_button(
-        label="📥 PDF İNDİR", 
-        data=pdf_bytes, 
-        file_name="Taahhutname.pdf", 
-        mime="application/pdf"
-    )
+    st.download_button("📥 PDF INDIR", pdf_bytes, "Taahhutname.pdf", "application/pdf")
