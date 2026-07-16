@@ -1,6 +1,7 @@
 import streamlit as st
 from fpdf import FPDF
 import base64
+import os
 
 # Page Configuration
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
@@ -38,8 +39,8 @@ if is_hisseli:
     toplam_su_cephe = col_a.number_input("Toplam Su Cephe", min_value=0.0, key="top_su")
     toplam_kanal_cephe = col_b.number_input("Toplam Kanal Cephe", min_value=0.0, key="top_kanal")
     
-    su_cephe = toplam_su_cephe / toplam_bb
-    kanal_cephe = toplam_kanal_cephe / toplam_bb
+    su_cephe = toplam_su_cephe / toplam_bb if toplam_bb > 0 else 0
+    kanal_cephe = toplam_kanal_cephe / toplam_bb if toplam_bb > 0 else 0
 else:
     col_a, col_b = st.columns(2)
     su_cephe = col_a.number_input("Su Cephe", min_value=0.0, key="tek_su")
@@ -53,21 +54,21 @@ if st.button("BELGE OLUŞTUR"):
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     
-    # fpdf2'nin kendi içindeki gömülü fontu, unicode desteği ile kullanıyoruz
-    pdf.set_font("helvetica", size=14) 
+    # Sunucu üzerindeki yüklü fontu kullanma
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    if os.path.exists(font_path):
+        pdf.add_font("DejaVu", "", font_path, uni=True)
+        pdf.set_font("DejaVu", size=14)
+    else:
+        pdf.set_font("helvetica", size=14)
     
-    # Eğer bu hata verirse, lütfen "TAAHHÜTNAME" gibi özel karakter içeren 
-    # kelimeleri şu şekilde yazmayı deneyin:
-    # "TAAHHÜTNAME".encode('latin-1', 'replace').decode('latin-1')
-    # Font değişikliği yapıldı: DejaVuSans.ttf yerine "helvetica" kullanılıyor
-    pdf.set_font("helvetica", size=14)
     pdf.cell(0, 8, "TAAHHÜTNAME", ln=True, align='C')
     pdf.cell(0, 8, "İÇME SUYU VE KANAL KATILIMI İÇİN", ln=True, align='C')
     pdf.cell(0, 8, "TAŞINMAZ TAPU KAYDI", ln=True, align='C')
     pdf.ln(10)
     
     # Information Layout
-    pdf.set_font("helvetica", size=11)
+    pdf.set_font("DejaVu" if os.path.exists(font_path) else "helvetica", size=11)
     pdf.text(20, 90, "İLİ"); pdf.text(45, 90, f": {ili}")
     pdf.text(20, 95, "İLÇE"); pdf.text(45, 95, f": {ilce}")
     pdf.text(20, 100, "MAHALLE"); pdf.text(45, 100, f": {mahalle}")
