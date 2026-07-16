@@ -8,10 +8,15 @@ def t(text):
 
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
 
+# Stil ayarları: Yazılabilir alanları (input) açık sarı yapıyoruz
 st.markdown("""
     <style>
     .stApp { background-color: #e3f2fd; } 
     h1 { color: #003366; text-align: center; }
+    /* Yazılabilir alanları açık sarı yapma */
+    div[data-baseweb="input"] > div {
+        background-color: #fff9c4 !important;
+    }
     .big-font { font-size:20px !important; font-weight: bold; color: #003366; }
     </style>
 """, unsafe_allow_html=True)
@@ -72,7 +77,17 @@ if st.button("BELGE OLUŞTUR"):
     metin = t("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla, İZSU Genel Müdürlüğü tarafından belirlenen bedelleri ödeyeceğimi beyan ve taahhüt ederim.")
     pdf.multi_cell(0, 5, metin)
 
+    # PDF oluşturma ve hata giderme
     pdf_bytes = pdf.output()
+    # fpdf2'de çıktı bazen obje dönebilir, bytes'a zorluyoruz
+    if not isinstance(pdf_bytes, bytes):
+        pdf_bytes = bytes(pdf_bytes)
+
     b64 = base64.b64encode(pdf_bytes).decode()
     st.markdown(f'<iframe src="data:application/pdf;base64,{b64}" width="100%" height="600px"></iframe>', unsafe_allow_html=True)
-    st.download_button("📥 PDF İNDİR", pdf_bytes, "Taahhutname.pdf", "application/pdf")
+    st.download_button(
+        label="📥 PDF İNDİR", 
+        data=pdf_bytes, 
+        file_name="Taahhutname.pdf", 
+        mime="application/pdf"
+    )
