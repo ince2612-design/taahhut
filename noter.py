@@ -3,7 +3,7 @@ from fpdf import FPDF
 import base64
 import os
 
-st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
+st.set_page_config(page_title="NOTER Taahhütname Paneli", layout="wide")
 
 # CSS: Yazılabilir alanları açık sarı yapma
 st.markdown("""
@@ -14,7 +14,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("TAAHHÜTNAME (İZSU)")
+st.title("NOTER TAAHHÜTNAMESİ ")
 
 # Sütunlu Form Yerleşimi
 col1, col2 = st.columns(2)
@@ -86,7 +86,7 @@ if st.button("BELGE OLUŞTUR"):
     
     # METİN
     pdf.set_xy(20, 160)
-    metin = ("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla İZSU Genel Müdürlüğü tarafından yapılacak "
+    metin = ("    Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla İZSU Genel Müdürlüğü tarafından yapılacak "
              "İçme suyu ve kanal katılım payları için belirlenen %100 katılım bedelini İdarece teknik alt yapı "
              "tamamlandığı zaman, o tarihte İdarece tespit edilip Yönetim Kurulunca Onaylanan birim fiyatlar "
              "üzerinden hesaplanacak alt yapı bedelinin tamamını (%100) olarak İZSU Genel Müdürlüğüne nakten "
