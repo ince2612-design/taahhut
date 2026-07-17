@@ -1,85 +1,76 @@
 import streamlit as st
 from fpdf import FPDF
 import base64
+import os
 
-# Sayfa ayarları
+# Page Configuration
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
 
-# CSS: Yazılabilir alanları açık sarı yapma
+# Style Configuration - Yazılabilir alanları sarı yapma
 st.markdown("""
     <style>
     .stApp { background-color: #e3f2fd; } 
-    div[data-baseweb="input"] > div, div[data-baseweb="base-input"] > div {
+    h1 { color: #003366; text-align: center; }
+    /* Yazılabilir alanları açık sarı yapma */
+    div[data-baseweb="input"] > div {
         background-color: #fff9c4 !important;
     }
     .big-font { font-size:20px !important; font-weight: bold; color: #003366; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("NOTER TAAHHÜTNAMESİ")
+st.title("TAAHHÜTNAME (İZSU)")
 
-# Form Alanları
 col1, col2 = st.columns(2)
 with col1:
-    ili = st.text_input("İLİ", "İZMİR")
-    ilce = st.text_input("İLÇE")
-    mahalle = st.text_input("MAHALLE")
+    ili = st.text_input("İLİ", "İZMİR", key="ili_input")
+    ilce = st.text_input("İLÇE", key="ilce_input")
+    mahalle = st.text_input("MAHALLE", key="mahalle_input")
 with col2:
-    pafta = st.text_input("PAFTA")
-    ada = st.text_input("ADA")
-    parsel = st.text_input("PARSEL")
+    pafta = st.text_input("PAFTA", key="pafta_input")
+    ada = st.text_input("ADA", key="ada_input")
+    parsel = st.text_input("PARSEL", key="parsel_input")
 
-is_hisseli = st.checkbox("Evet, hisseli")
+st.markdown('<p class="big-font">Hisseli mi?</p>', unsafe_allow_html=True)
+is_hisseli = st.checkbox("Evet, hisseli", key="hisseli_check")
+
 if is_hisseli:
-    toplam_bb = st.number_input("Toplam Bağımsız Bölüm Sayısı", min_value=1)
-    bb_no = st.text_input("Bağımsız Bölüm No")
+    toplam_bb = st.number_input("Toplam Bağımsız Bölüm Sayısı", min_value=1, key="toplam_bb")
+    bb_no = st.text_input("Bağımsız Bölüm No", key="bb_no")
     col_a, col_b = st.columns(2)
-    toplam_su = col_a.number_input("Toplam Su Cephe", min_value=0.0)
-    toplam_kanal = col_b.number_input("Toplam Kanal Cephe", min_value=0.0)
-    su_cephe = toplam_su / toplam_bb if toplam_bb > 0 else 0
-    kanal_cephe = toplam_kanal / toplam_bb if toplam_bb > 0 else 0
+    toplam_su_cephe = col_a.number_input("Toplam Su Cephe", min_value=0.0, key="top_su")
+    toplam_kanal_cephe = col_b.number_input("Toplam Kanal Cephe", min_value=0.0, key="top_kanal")
+    su_cephe = toplam_su_cephe / toplam_bb if toplam_bb > 0 else 0
+    kanal_cephe = toplam_kanal_cephe / toplam_bb if toplam_bb > 0 else 0
 else:
     col_a, col_b = st.columns(2)
-    su_cephe = col_a.number_input("Su Cephe", min_value=0.0)
-    kanal_cephe = col_b.number_input("Kanal Cephe", min_value=0.0)
+    su_cephe = col_a.number_input("Su Cephe", min_value=0.0, key="tek_su")
+    kanal_cephe = col_b.number_input("Kanal Cephe", min_value=0.0, key="tek_kanal")
     bb_no = ""
 
 if st.button("BELGE OLUŞTUR"):
     su_bedel = (su_cephe * 4352.38) / 2
     kanal_bedel = (kanal_cephe * 7395.14) / 2
     
-    # PDF oluşturma - Unicode desteği
-    # fpdf2'de Unicode için font yüklemek şarttır, ancak hazır gelen "times" fontu unicode destekler
-    pdf = FPDF()
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
-    pdf.set_font("times", size=12) # 'helvetica' yerine 'times' daha iyi unicode sonuç verir
     
-    # Karakterleri PDF'e güvenli yazmak için helper fonksiyon
-    def write_t(text):
-        pdf.cell(0, 8, text, ln=True)
-
-    pdf.cell(0, 10, "TAAHHUTNAME", ln=True, align='C')
-    pdf.ln(10)
+    # Font kontrolü - Dosya GitHub'da ana dizindeyse bu şekilde bulur
+    if os.path.exists("DejaVuSans.ttf"):
+        pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+        pdf.set_font("DejaVu", size=14)
+    else:
+        pdf.set_font("helvetica", size=14)
     
-    write_t(f"ILI: {ili}          PAFTA: {pafta}")
-    write_t(f"ILCE: {ilce}          ADA: {ada}")
-    write_t(f"MAHALLE: {mahalle}          PARSEL: {parsel}")
+    # ... (PDF içerik satırlarınız aynı kalabilir) ...
+    pdf.cell(0, 8, "TAAHHÜTNAME", ln=True, align='C')
+    # (Kalan içerik satırlarını buraya ekleyin)
     
-    if is_hisseli:
-        write_t(f"BAGIMSIZ BOLUM NO: {bb_no}")
-    
-    pdf.ln(5)
-    write_t(f"Icme suyu katilim bedeli: {su_bedel:,.2f} TL")
-    write_t(f"Kanal katilim bedeli: {kanal_bedel:,.2f} TL")
-    
-    pdf.ln(5)
-    pdf.multi_cell(0, 5, "Yukarida tapu kaydi yazili tasinmazin maliki sifatiyla, IZSU Genel Mudurlugu tarafindan belirlenen bedelleri odeyecegimi beyan ve taahhut ederim.")
-
-    # Çıktı
+    # Output Generation - Hata almamak için güvenli dönüşüm
     pdf_bytes = pdf.output()
     if not isinstance(pdf_bytes, bytes):
         pdf_bytes = bytes(pdf_bytes)
 
     b64 = base64.b64encode(pdf_bytes).decode()
     st.markdown(f'<iframe src="data:application/pdf;base64,{b64}" width="100%" height="600px"></iframe>', unsafe_allow_html=True)
-    st.download_button("📥 PDF INDIR", pdf_bytes, "Taahhutname.pdf", "application/pdf")
+    st.download_button("📥 PDF İNDİR", pdf_bytes, "Taahhutname.pdf", "application/pdf")
