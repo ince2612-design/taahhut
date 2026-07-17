@@ -16,27 +16,33 @@ st.markdown("""
 
 st.title("TAAHHÜTNAME (İZSU)")
 
-# (Form alanları aynı kalabilir...)
+# Sütunlu Form Yerleşimi
 col1, col2 = st.columns(2)
 with col1:
     ili = st.text_input("İLİ", "İZMİR")
     ilce = st.text_input("İLÇE")
     mahalle = st.text_input("MAHALLE")
+    # Sol sütun (Su cephe)
+    su_cephe_input = st.number_input("Su Cephe", min_value=0.0)
+
 with col2:
     pafta = st.text_input("PAFTA")
     ada = st.text_input("ADA")
     parsel = st.text_input("PARSEL")
+    # Sağ sütun (Kanal cephe)
+    kanal_cephe_input = st.number_input("Kanal Cephe", min_value=0.0)
 
+st.markdown('<p class="big-font">Hisseli mi?</p>', unsafe_allow_html=True)
 is_hisseli = st.checkbox("Evet, hisseli")
+
 if is_hisseli:
     toplam_bb = st.number_input("Toplam Bağımsız Bölüm Sayısı", min_value=1)
     bb_no = st.text_input("Bağımsız Bölüm No")
-    col_a, col_b = st.columns(2)
-    su_cephe = (col_a.number_input("Toplam Su Cephe") / toplam_bb) if toplam_bb > 0 else 0
-    kanal_cephe = (col_b.number_input("Toplam Kanal Cephe") / toplam_bb) if toplam_bb > 0 else 0
+    su_cephe = su_cephe_input / toplam_bb if toplam_bb > 0 else 0
+    kanal_cephe = kanal_cephe_input / toplam_bb if toplam_bb > 0 else 0
 else:
-    su_cephe = st.number_input("Su Cephe")
-    kanal_cephe = st.number_input("Kanal Cephe")
+    su_cephe = su_cephe_input
+    kanal_cephe = kanal_cephe_input
     bb_no = ""
 
 if st.button("BELGE OLUŞTUR"):
@@ -46,7 +52,6 @@ if st.button("BELGE OLUŞTUR"):
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     
-    # Fontu tek seferde tanımla
     font_name = "DejaVu"
     if os.path.exists("DejaVuSans.ttf"):
         pdf.add_font(font_name, "", "DejaVuSans.ttf", uni=True)
@@ -58,7 +63,7 @@ if st.button("BELGE OLUŞTUR"):
     pdf.cell(0, 8, "TAŞINMAZ TAPU KAYDI", ln=True, align='C')
     pdf.ln(10)
     
-    # BİLGİLER (Eski koordinatlı düzeniniz)
+    # BİLGİLER
     pdf.set_font(font_name, size=11)
     pdf.text(20, 90, "İLİ"); pdf.text(45, 90, f": {ili}")
     pdf.text(20, 95, "İLÇE"); pdf.text(45, 95, f": {ilce}")
@@ -79,7 +84,7 @@ if st.button("BELGE OLUŞTUR"):
     pdf.text(20, 145, "Kanal katılım bedeli %100")
     pdf.text(85, 145, f": {kanal_bedel:,.2f} TL")
     
-    # METİN BLOĞU
+    # METİN
     pdf.set_xy(20, 160)
     metin = ("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla İZSU Genel Müdürlüğü tarafından yapılacak "
              "İçme suyu ve kanal katılım payları için belirlenen %100 katılım bedelini İdarece teknik alt yapı "
@@ -89,12 +94,10 @@ if st.button("BELGE OLUŞTUR"):
     pdf.multi_cell(0, 5, metin, align='J')
 
     # İMZALAR
-    pdf.set_xy(20, 215)
     pdf.text(20, 215, "Taahhüt Eden :")
     pdf.text(20, 220, "Telefon      :")
     pdf.text(20, 225, "Adres        :")
 
-    # ÇIKTI
     pdf_bytes = pdf.output()
     if not isinstance(pdf_bytes, bytes): pdf_bytes = bytes(pdf_bytes)
 
