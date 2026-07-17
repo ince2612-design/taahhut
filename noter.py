@@ -6,12 +6,11 @@ import os
 # Page Configuration
 st.set_page_config(page_title="İZSU Taahhütname Paneli", layout="wide")
 
-# Style Configuration - Yazılabilir alanları sarı yapma
+# Style Configuration - Yazılabilir alanları açık sarı yapma
 st.markdown("""
     <style>
     .stApp { background-color: #e3f2fd; } 
     h1 { color: #003366; text-align: center; }
-    /* Yazılabilir alanları açık sarı yapma */
     div[data-baseweb="input"] > div {
         background-color: #fff9c4 !important;
     }
@@ -55,18 +54,44 @@ if st.button("BELGE OLUŞTUR"):
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     
-    # Font kontrolü - Dosya GitHub'da ana dizindeyse bu şekilde bulur
+    # Font kontrolü
     if os.path.exists("DejaVuSans.ttf"):
         pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
-        pdf.set_font("DejaVu", size=14)
+        pdf.set_font("DejaVu", size=12)
     else:
-        pdf.set_font("helvetica", size=14)
+        pdf.set_font("helvetica", size=12)
     
-    # ... (PDF içerik satırlarınız aynı kalabilir) ...
-    pdf.cell(0, 8, "TAAHHÜTNAME", ln=True, align='C')
-    # (Kalan içerik satırlarını buraya ekleyin)
+    # PDF İçeriği
+    pdf.cell(0, 10, "TAAHHÜTNAME", ln=True, align='C')
+    pdf.cell(0, 10, "İÇME SUYU VE KANAL KATILIMI İÇİN", ln=True, align='C')
+    pdf.cell(0, 10, "TAŞINMAZ TAPU KAYDI", ln=True, align='C')
+    pdf.ln(10)
     
-    # Output Generation - Hata almamak için güvenli dönüşüm
+    pdf.cell(0, 8, f"İLİ: {ili}          PAFTA: {pafta}", ln=True)
+    pdf.cell(0, 8, f"İLÇE: {ilce}          ADA: {ada}", ln=True)
+    pdf.cell(0, 8, f"MAHALLE: {mahalle}          PARSEL: {parsel}", ln=True)
+    
+    if is_hisseli and bb_no:
+        pdf.cell(0, 8, f"{bb_no} NOLU BAĞIMSIZ BÖLÜM İÇİNDİR", ln=True)
+    
+    pdf.ln(10)
+    pdf.cell(0, 8, f"İçme suyu katılım bedeli: {su_bedel:,.2f} TL", ln=True)
+    pdf.cell(0, 8, f"Kanal katılım bedeli: {kanal_bedel:,.2f} TL", ln=True)
+    
+    pdf.ln(10)
+    metin = ("Yukarıda tapu kaydı yazılı taşınmazın maliki sıfatıyla İZSU Genel Müdürlüğü tarafından yapılacak "
+             "İçme suyu ve kanal katılım payları için belirlenen %100 katılım bedelini İdarece teknik alt yapı "
+             "tamamlandığı zaman, o tarihte İdarece tespit edilip Yönetim Kurulunca Onaylanan birim fiyatlar "
+             "üzerinden hesaplanacak alt yapı bedelinin tamamını (%100) olarak İZSU Genel Müdürlüğüne nakten "
+             "ödeyeceğimi beyan kabul ve taahhüt ederim.")
+    pdf.multi_cell(0, 5, metin, align='J')
+
+    pdf.ln(10)
+    pdf.cell(0, 8, "Taahhüt Eden :", ln=True)
+    pdf.cell(0, 8, "Telefon      :", ln=True)
+    pdf.cell(0, 8, "Adres        :", ln=True)
+
+    # PDF Çıktı
     pdf_bytes = pdf.output()
     if not isinstance(pdf_bytes, bytes):
         pdf_bytes = bytes(pdf_bytes)
